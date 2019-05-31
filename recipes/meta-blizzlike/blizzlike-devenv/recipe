@@ -1,58 +1,14 @@
 DESCRIPTION="blizzlike development environment"
-DEPENDS="gentoo-hardened"
-GENTOO_BASEURL="https://distfiles.blizzlike.org/gentoo"
-
-FILES=" \
-  repos.conf \
-  repos-git.conf \
-"
-
-do_distro () {
-  if [ -f $ROOTFS_DIR/etc/portage/repos.conf/blizzlike.conf ] && [ ! -n "$REBUILD" ]; then
-    echo "Seems like rootfs already exists. Nothing to do."
-  else
-    install -d $ROOTFS_DIR/etc/portage/repos.conf $ROOTFS_DIR/usr/blizzlike
-
-    if [ ! -n "$USEGIT" ]; then
-      local portage=$TARGET_DIR/portage-latest.tar.xz
-      wget $GENTOO_BASEURL/snapshots/blizzlike-portage.tar.xz -O $portage
-      tar xJpf $portage -C $ROOTFS_DIR/usr/blizzlike
-    fi
-  fi
-}
+DEPENDS="blizzlike-stage3"
+EARGS="--buildpkg=y --buildpkg-exclude=\"virtual/*\""
 
 do_prepare () {
   source /etc/profile && env-update
 
-  if [ ! -n "$USEGIT" ]; then
-    cp /var/files/repos.conf /etc/portage/repos.conf/blizzlike.conf
-  else
-    cp /var/files/repos-git.conf /etc/portage/repos.conf/blizzlike.conf
-    emerge -q dev-vcs/git
-  fi
-
-  emerge -q --sync
-
-  ln -snf ../../usr/blizzlike/portage/profiles/hardened/amd64 /etc/portage/make.profile
-  ln -snf ../../usr/blizzlike/portage/patches /etc/portage/patches
-  sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
-  locale-gen && source /etc/profile
-  eselect locale set en_US.utf8
-
-  cp /usr/share/zoneinfo/Etc/UTC /etc/localtime
-}
-
-do_install () {
-  source /etc/profile && env-update
-
   if [ ! -n "$USEBINPKG" ]; then
-    eargs="--getbinpkg=y --usepkg=y"
+    EARGS="${EARGS} --getbinpkg=y --usepkg=y"
   fi
 
-  emerge -q1 app-portage/gentoolkit
-  emerge -eq system --buildpkg=y ${eargs} --buildpkg-exclude "virtual/*"
-  emerge -q @preserved-rebuild --buildpkg=y ${eargs} --buildpkg-exclude "virtual/*"
-
-  export REVDEP_REBUILD_DEFAULT_OPTS="--buildpkg=y ${eargs} --buildpkg-exclude \"virtual/*\""
-  revdep-rebuild
+  emerge -q dev-db/mariadb ${EARGS}
+  emerge -q dev-lang/go ${EARGS}
 }

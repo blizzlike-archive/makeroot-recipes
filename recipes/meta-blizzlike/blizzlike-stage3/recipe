@@ -1,0 +1,92 @@
+DESCRIPTION="blizzlike specific gentoo stage3"
+DEPENDS="gentoo-hardened"
+GENTOO_BASEURL="https://distfiles.blizzlike.org/gentoo"
+EARGS="--buildpkg=y --buildpkg-exclude \"virtual/*\""
+
+FILES=" \
+  repos.conf \
+  repos-git.conf \
+"
+
+do_distro () {
+  if [ -f $ROOTFS_DIR/etc/portage/repos.conf/blizzlike.conf ] && [ ! -n "$REBUILD" ]; then
+    echo "Seems like rootfs already exists. Nothing to do."
+  else
+    install -d $ROOTFS_DIR/etc/portage/repos.conf $ROOTFS_DIR/usr/blizzlike
+
+    if [ ! -n "$USEGIT" ]; then
+      local portage=$TARGET_DIR/portage-latest.tar.xz
+      wget $GENTOO_BASEURL/snapshots/blizzlike-portage.tar.xz -O $portage
+      tar xJpf $portage -C $ROOTFS_DIR/usr/blizzlike
+    fi
+  fi
+}
+
+do_prepare () {
+  source /etc/profile && env-update
+
+  if [ ! -n "$USEBINPKG" ]; then
+    EARGS="${EARGS} --getbinpkg=y --usepkg=y"
+  fi
+
+  if [ ! -n "$USEGIT" ]; then
+    cp /var/files/repos.conf /etc/portage/repos.conf/blizzlike.conf
+  else
+    cp /var/files/repos-git.conf /etc/portage/repos.conf/blizzlike.conf
+    emerge -q dev-vcs/git ${EARGS}
+  fi
+
+  emerge -q --sync
+
+  ln -snf ../../usr/blizzlike/portage/profiles/hardened/amd64 /etc/portage/make.profile
+  ln -snf ../../usr/blizzlike/portage/patches /etc/portage/patches
+  sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+  locale-gen && source /etc/profile
+  eselect locale set en_US.utf8
+
+  cp /usr/share/zoneinfo/Etc/UTC /etc/localtime
+}
+
+do_install () {
+  source /etc/profile && env-update
+
+  if [ ! -n "$USEBINPKG" ]; then
+    EARGS="${EARGS} --getbinpkg=y --usepkg=y"
+  fi
+
+  emerge -q1 app-admin/syslog-ng ${EARGS}
+  emerge -q1 app-portage/gentoolkit ${EARGS}
+  emerge --unmerge app-admin/metalog
+  emerge -eq system  ${EARGS}
+  emerge -q @preserved-rebuild --buildpkg=y ${EARGS}
+
+  export REVDEP_REBUILD_DEFAULT_OPTS="--buildpkg=y ${EARGS}"
+  revdep-rebuild
+}
+
+do_image () {
+  if [ ! -n "$USEGIT" ]; then
+    date -R > $ROOTFS_DIR/usr/blizzlike/portage/metadata/timestamp.chk
+  else
+    cp $ROOTFS_DIR/var/files/repos.conf $ROOTFS_DIR/etc/portage/repos.conf/blizzlike.conf
+  fi
+
+  install -d $TARGET_DIR/image
+  tar cJpf $TARGET_DIR/image/blizzlike-portage.tar.xz \
+    -C $ROOTFS_DIR/usr/blizzlike \
+    --exclude="./.git" \
+    ./portage
+  tar cJpf $TARGET_DIR/image/blizzlike-stage3-amd64-hardened.tar.xz \
+    -C $ROOTFS_DIR \
+    --exclude="./boot/*" \
+    --exclude="./usr/src/*" \
+    --exclude="./tmp/*" \
+    --exclude="./usr/portage" \
+    --exclude="./usr/blizzlike/portage" \
+    --exclude="./lib/modules" \
+    --exclude="./etc/resolv.conf" \
+    --exclude="./proc/*" \
+    --exclude="./sys/*" \
+    --exclude="./dev/*" \
+    .
+}
