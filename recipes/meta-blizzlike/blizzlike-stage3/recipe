@@ -56,7 +56,6 @@ do_install () {
 
   emerge -q1 app-admin/syslog-ng ${EARGS}
   emerge -q1 app-portage/gentoolkit ${EARGS}
-  emerge --unmerge app-admin/metalog
   emerge -eq system  ${EARGS}
   emerge -q @preserved-rebuild --buildpkg=y ${EARGS}
 
