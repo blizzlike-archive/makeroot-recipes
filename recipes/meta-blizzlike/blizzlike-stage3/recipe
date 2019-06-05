@@ -1,7 +1,7 @@
 DESCRIPTION="blizzlike specific gentoo stage3"
 DEPENDS="gentoo-hardened"
 GENTOO_BASEURL="https://distfiles.blizzlike.org/gentoo"
-EARGS="--buildpkg=y --buildpkg-exclude \"virtual/*\""
+EARGS='--buildpkg=y --buildpkg-exclude virtual/*'
 
 FILES=" \
   repos.conf \
@@ -20,14 +20,16 @@ do_distro () {
       tar xJpf $portage -C $ROOTFS_DIR/usr/blizzlike
     fi
   fi
-}
-
-do_prepare () {
-  source /etc/profile && env-update
 
   if [ ! -n "$USEBINPKG" ]; then
     EARGS="${EARGS} --getbinpkg=y --usepkg=y"
   fi
+
+  export EARGS USEGIT
+}
+
+do_prepare () {
+  source /etc/profile && env-update
 
   if [ ! -n "$USEGIT" ]; then
     cp /var/files/repos.conf /etc/portage/repos.conf/blizzlike.conf
@@ -50,16 +52,12 @@ do_prepare () {
 do_install () {
   source /etc/profile && env-update
 
-  if [ ! -n "$USEBINPKG" ]; then
-    EARGS="${EARGS} --getbinpkg=y --usepkg=y"
-  fi
-
   emerge -q1 app-admin/syslog-ng ${EARGS}
   emerge -q1 app-portage/gentoolkit ${EARGS}
-  emerge -eq system  ${EARGS}
-  emerge -q @preserved-rebuild --buildpkg=y ${EARGS}
+  emerge -eq system ${EARGS}
+  emerge -q @preserved-rebuild ${EARGS}
 
-  export REVDEP_REBUILD_DEFAULT_OPTS="--buildpkg=y ${EARGS}"
+  export REVDEP_REBUILD_DEFAULT_OPTS="${EARGS}"
   revdep-rebuild
 }
 

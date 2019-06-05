@@ -1,6 +1,6 @@
 DESCRIPTION="blizzlike development environment"
 DEPENDS="blizzlike-stage3"
-EARGS="--buildpkg=y --buildpkg-exclude=\"virtual/*\""
+EARGS="--buildpkg=y --buildpkg-exclude=virtual/*"
 
 do_prepare () {
   source /etc/profile && env-update
@@ -11,4 +11,6 @@ do_prepare () {
 
   emerge -q dev-db/mariadb ${EARGS}
   emerge -q dev-lang/go ${EARGS}
+
+  ln -s /etc/init.d/mysql /etc/runlevels/default/mysql
 }
