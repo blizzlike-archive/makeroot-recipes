@@ -1,0 +1,23 @@
+DESCRIPTION="blizzlike specific gentoo package build"
+DEPENDS="gentoo-hardened-stage3"
+
+FILES=" \
+  packages \
+"
+
+do_install () {
+  source /etc/profile && env-update
+
+  if [ -n "$USEBINPKG" ]; then
+    eargs="--getbinpkg=y --usepkg=y"
+  fi
+
+  if [ -n "$ETHREADS" ]; then
+    eargs="$eargs -j$ETHREADS"
+  fi
+
+  for pkg in $(cat /var/files/packages); do
+    emerge -q1 $pkg --buildpkg=y $eargs --buildpkg-exclude "virtual/*"
+    emerge -q --depclean
+  done
+}
