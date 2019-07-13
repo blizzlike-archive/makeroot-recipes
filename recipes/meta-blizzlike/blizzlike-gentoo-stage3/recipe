@@ -1,5 +1,5 @@
 DESCRIPTION="blizzlike specific gentoo stage3"
-DEPENDS="gentoo-hardened"
+DEPENDS="fnordpipe-hardened-stage3"
 GENTOO_BASEURL="https://distfiles.blizzlike.org/gentoo"
 EARGS='--buildpkg=y --buildpkg-exclude virtual/*'
 
@@ -35,7 +35,6 @@ do_prepare () {
     cp /var/files/repos.conf /etc/portage/repos.conf/blizzlike.conf
   else
     cp /var/files/repos-git.conf /etc/portage/repos.conf/blizzlike.conf
-    emerge -q dev-vcs/git ${EARGS}
   fi
 
   emerge -q --sync
@@ -52,10 +51,7 @@ do_prepare () {
 do_install () {
   source /etc/profile && env-update
 
-  emerge -q1 app-admin/syslog-ng ${EARGS}
-  emerge -q1 app-portage/gentoolkit ${EARGS}
-  emerge -eq system ${EARGS}
-  emerge -q @preserved-rebuild ${EARGS}
+  emerge -vuNDq world ${EARGS}
 
   export REVDEP_REBUILD_DEFAULT_OPTS="${EARGS}"
   revdep-rebuild

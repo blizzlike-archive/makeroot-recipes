@@ -1,5 +1,5 @@
 DESCRIPTION="blizzlike specific gentoo package build"
-DEPENDS="fnordpipe-hardened-stage3"
+DEPENDS="blizzlike-gentoo-stage3"
 
 FILES=" \
   packages \
